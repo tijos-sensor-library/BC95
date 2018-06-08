@@ -9,6 +9,22 @@ import tijos.framework.util.Delay;
  * BC95 NB-IOT Model Sample  
  *
  */
+
+class BC95EventListener implements IDeviceEventListener
+{
+
+	@Override
+	public void onCoapDataArrived(byte []message) {
+		System.out.println("onCoapDataArrived");
+	}
+	
+	@Override
+	public void onUDPDataArrived(byte [] packet) {
+		System.out.println("onUDPDataArrived");
+	}
+}
+
+
 public class TiBC95Sample
 {
 	public static void main(String[] args) {
@@ -19,7 +35,9 @@ public class TiBC95Sample
 
 			uart.setWorkParameters(8, 1, TiUART.PARITY_NONE, 9600);
 
+			
 			TiBC95 bc95 = new TiBC95(uart);
+			bc95.setEventListener(new BC95EventListener());
 
 			System.out.println("Start...");
 			//查询模块射频功能状态
@@ -54,24 +72,27 @@ public class TiBC95Sample
 			System.out.println("IP Address " + bc95.getIPAddress());
 			System.out.println("Date time "  + bc95.getDateTime());
 
-			//COAP Server IP which is bound to the SIM card
-			String serverIp = "115.29.240.46";
+			//电信物联网平台分配的IP, 请换成实际的服务器IP
+			String serverIp = "180.101.147.115";
 
-			
-			try {
-				bc95.ping(serverIp);
-			}
-			catch(IOException ex) {
-				System.out.println("Failed to pin " + serverIp);
-			}
-
-			//COAP data transmission
-			byte[] data = "This is a test".getBytes();
 			bc95.setCDPServer(serverIp, 5683);
 			bc95.enableMsgNotification(true);
-			bc95.coapSend(data);
+
+			//COAP data transmission 
+			byte[] data = new byte[3];
 			
-			System.out.println("Done");
+			//通讯结构需要与电信平台中定义的Profile和插件一致， 具体请参考电信平台相关文档
+			int counter = 0;
+			while(true) {
+				counter ++;
+				data[0] = 0x00;
+				data[1] = (byte)counter;
+				data[2] = (byte)(counter + 1); 
+				bc95.coapSend(data);
+				
+				Delay.msDelay(15000);
+			}
+			
 
 		} catch (IOException ex) {
 			ex.printStackTrace();
