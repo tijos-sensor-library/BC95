@@ -416,6 +416,14 @@ public class TiBC95 extends Thread {
 			sendCommand("AT+NSMI=0");
 		}
 	}
+	
+	/**
+	 * 开启新消息通知，配置后，若模块接收到 CoAP 消息，会主动向串口发送响应
+	 * @throws IOException
+	 */
+	public void enableNewArriveMessage() throws IOException {
+		sendCommand("AT+NNMI=1");
+	}
 
 	/**
 	 * 通过COAP向服务器发送数据

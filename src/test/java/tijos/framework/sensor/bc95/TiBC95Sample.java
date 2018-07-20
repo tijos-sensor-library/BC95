@@ -1,6 +1,8 @@
 package tijos.framework.sensor.bc95;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import tijos.framework.devicecenter.TiUART;
 import tijos.framework.util.Delay;
@@ -24,6 +26,40 @@ class BC95EventListener implements IDeviceEventListener
 	}
 }
 
+class DataAcquireTask extends TimerTask {  
+	  
+	TiBC95 bc95;
+	int counter = 0;
+
+	public DataAcquireTask(TiBC95 bc95) {
+		this.bc95 = bc95;
+	}
+	
+    @Override  
+    public void run() {  
+        System.out.println("report to OC platform");  
+
+		//COAP data transmission 
+		byte[] data = new byte[5];
+		
+		//通讯结构需要与电信平台中定义的Profile和插件一致， 具体请参考电信平台相关文档
+		counter ++;
+		data[0] = 0x00;
+		data[1] = (byte)counter;
+		data[2] = (byte)(counter + 1);
+		data[3] = 1;
+		data[4] = 1;
+		
+		try {
+			bc95.coapSend(data);
+		}
+		catch(IOException ex) {
+			ex.printStackTrace();
+		}
+		
+    }  
+  
+}  
 
 public class TiBC95Sample
 {
@@ -32,6 +68,7 @@ public class TiBC95Sample
 
 		try {
 			TiUART uart = TiUART.open(1);
+			
 
 			uart.setWorkParameters(8, 1, TiUART.PARITY_NONE, 9600);
 
@@ -77,22 +114,14 @@ public class TiBC95Sample
 
 			bc95.setCDPServer(serverIp, 5683);
 			bc95.enableMsgNotification(true);
+			bc95.enableNewArriveMessage();
+			
+			java.util.Timer timer = new Timer(true); 
+			timer.schedule(new DataAcquireTask(bc95), 1000, 1 * 60 * 1000); //每1分钟执行
 
-			//COAP data transmission 
-			byte[] data = new byte[3];
-			
-			//通讯结构需要与电信平台中定义的Profile和插件一致， 具体请参考电信平台相关文档
-			int counter = 0;
 			while(true) {
-				counter ++;
-				data[0] = 0x00;
-				data[1] = (byte)counter;
-				data[2] = (byte)(counter + 1); 
-				bc95.coapSend(data);
-				
-				Delay.msDelay(15000);
+				Delay.msDelay(10000);
 			}
-			
 
 		} catch (IOException ex) {
 			ex.printStackTrace();
