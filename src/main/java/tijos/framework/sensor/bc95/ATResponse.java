@@ -4,9 +4,16 @@ public class ATResponse {
 	
 	private String response;
 	
+	public void reset() {
+		this.response = "";
+	}
+	
 	public void setResponse(String resp) 
 	{
-		this.response = resp;
+		if(this.response.length() > 0)
+			this.response += "\n";
+		
+		this.response += resp;
 	}
 	
 	public String getResponse() {

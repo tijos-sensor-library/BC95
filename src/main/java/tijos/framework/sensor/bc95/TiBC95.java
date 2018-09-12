@@ -11,7 +11,7 @@ import tijos.framework.util.Delay;
 import tijos.framework.util.Formatter;
 
 /**
- * Quectel BC95 NB-IOT module driver for TiJOS , refer to
+ * Quectel BC95/BC28 NB-IOT module driver for TiJOS , refer to
  * http://www.quectel.com/product/bc95.htm for more information Note that:
  * NB-IOT module need to bind a server IP for data transportation, please
  * confirm with the NB-IOT provider before testing
@@ -284,6 +284,19 @@ public class TiBC95 extends Thread {
 			sendCommand("AT+NCONFIG=AUTOCONNECT,FALSE");
 
 	}
+	
+	/**
+	 * 查询模组状态
+	 * @return
+	 * @throws IOException
+	 */
+	public String [] queryUEStatistics() throws IOException {
+		
+		String resp = sendCommand("AT+NUESTATS");
+		
+		return resp.split("\n");
+		
+	}
 
 	/**
 	 * 测试 IP 地址是否可用
@@ -400,6 +413,8 @@ public class TiBC95 extends Thread {
 	public void setCDPServer(String ip, int port) throws IOException {
 
 		sendCommand("AT+NCDP=" + ip + "," + port);
+		
+		sendCommand("AT+NCDP?");
 	}
 
 	/**
@@ -424,7 +439,7 @@ public class TiBC95 extends Thread {
 	public void enableNewArriveMessage() throws IOException {
 		sendCommand("AT+NNMI=1");
 	}
-
+	
 	/**
 	 * 通过COAP向服务器发送数据
 	 * 
@@ -436,11 +451,22 @@ public class TiBC95 extends Thread {
 
 		String result = sendCommand("AT+NMGS=" + data.length + "," + Formatter.toHexString(data));
 		
+		
 		result = sendCommand("AT+NQMGS");
 		if(!result.contains("ERROR=0"))
 			throw new IOException("Failed to send coap message");
 	}
 
+	public void coapSend(byte[] data, int off, int len) throws IOException {
+
+		String result = sendCommand("AT+NMGS=" + len + "," + Formatter.toHexString(data, off, len, ""));
+		
+		result = sendCommand("AT+NQMGS");
+		if(!result.contains("ERROR=0"))
+			throw new IOException("Failed to send coap message");
+	}
+
+	
 	/**
 	 * 接收COAP数据 注意： 由于NB-IOT的特点， 下行数据需要要收到上行数据后立刻下发, 同时不保证数据能够到达, 在实际 应用中需要根据实际
 	 * 情况进行处理
@@ -504,12 +530,11 @@ public class TiBC95 extends Thread {
 	
 		synchronized (this.atResp) {
 			try {
-				this.atResp.setResponse("");
-				clearInput();
+				this.atResp.reset();
 				output.write((cmd + "\r\n").getBytes());
 
-				//this.atResp.wait(3000);
-				 this.atResp.wait();
+				this.atResp.wait(5000);
+				// this.atResp.wait();
 
 				return atResp.getResponse();
 				
@@ -542,11 +567,10 @@ public class TiBC95 extends Thread {
 	}
 
 	private void clearInput() throws IOException {
-/*
+
 		while (this.input.read() > 0)
 			;
 		this.uart.clear(3); // clear both input and output buffer
-*/
 	}
 
 	private byte[] hexStringToByte(String str) {

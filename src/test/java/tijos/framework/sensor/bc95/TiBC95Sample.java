@@ -67,9 +67,8 @@ public class TiBC95Sample
 		System.out.println("Hello World!");
 
 		try {
-			TiUART uart = TiUART.open(1);
+			TiUART uart = TiUART.open(2);
 			
-
 			uart.setWorkParameters(8, 1, TiUART.PARITY_NONE, 9600);
 
 			
@@ -95,6 +94,9 @@ public class TiBC95Sample
 					Delay.msDelay(1000);
 				}
 			}
+			
+			
+			String [] status = bc95.queryUEStatistics();
 			
 
 			System.out.println(" IMSI : " + bc95.getIMSI());
