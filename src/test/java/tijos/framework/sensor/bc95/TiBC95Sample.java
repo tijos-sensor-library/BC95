@@ -80,8 +80,13 @@ public class TiBC95Sample
 			if (!bc95.isMTOn()) {
 				System.out.println("Turn ON MT ...");
 				bc95.turnOnMT();
+				int counter = 0;
 				while(!bc95.isMTOn()) {
-					Delay.msDelay(2000);
+					Delay.msDelay(2000);					
+					if(counter++ > 10) {
+						bc95.turnOnMT();
+						counter = 0;
+					}
 				}
 			}
 			
